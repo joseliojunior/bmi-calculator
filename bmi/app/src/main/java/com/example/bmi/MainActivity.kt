@@ -1,30 +1,44 @@
 package com.example.bmi
 
+/*
+* Author: Josélio de S. C. Júnior
+* Last modification date: April 6th, 2021
+*
+* Modifications
+* - Replaced findViewById() with View Binding feature.
+* - Updated background colors to CDC, 2020 reference in.
+* - Updated function riskColorAPI23().
+* - Updated function riskColorAPI22().
+*
+*/
+
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import androidx.core.view.isVisible
+import com.example.bmi.databinding.ActivityMainBinding
 import kotlin.math.pow
 import kotlin.math.round
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
-        var ref : Int? = 0
-        val ref1Button = findViewById<Button>(R.id.ref1)
-        val ref2Button = findViewById<Button>(R.id.ref2)
-        val h = findViewById<EditText>(R.id.height)
-        val w = findViewById<EditText>(R.id.weight)
-        val calculate = findViewById<Button>(R.id.calculate)
-        val resultText = findViewById<TextView>(R.id.result)
-        val referenceText = findViewById<TextView>(R.id.reference)
+        var ref = 0
+        val ref1Button = binding.ref1
+        val ref2Button = binding.ref2
+        val h = binding.height
+        val w = binding.weight
+        val calculate = binding.calculate
+        val resultText = binding.result
+        val referenceText = binding.reference
 
         ref1Button.setOnClickListener {
             ref = 1
@@ -68,7 +82,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun riskClassification(resultText: TextView, referenceText: TextView, reference:Int?, bmi: Float) {
+    private fun riskClassification(resultText: TextView, referenceText: TextView, reference:Int, bmi: Float) {
         val r = round(bmi*100f)/100f
 
         fun convert(a:String) = "${r.toString().replace(".",",")} kg/m²\n$a"
@@ -147,110 +161,131 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.ref_who97)
         } else { getString(R.string.ref_cdc20) }
 
-        if (riskColorAPI23(resultText, bmi) != null) {
-            riskColorAPI23(resultText, bmi)
-        } else {
-            riskColorAPI22(resultText, bmi)
-        }
+        riskColorAPI23(resultText, bmi, reference) ?: riskColorAPI22(resultText, bmi, reference)
     }
 
-    private fun riskColorAPI23(a: TextView, bmi: Float): Unit? {
-        val textColor: Int
-        val backgroundColor: Int
+    private fun riskColorAPI23(textView: TextView, bmi: Float, ref: Int): Unit? {
+        val black = Color.parseColor("#000000")
+        val white = Color.parseColor("#ffffff")
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val black = Color.parseColor("#000000")
-            val white = Color.parseColor("#ffffff")
 
-            when (bmi) {
-                in -1.3f..-1f -> {
-                    backgroundColor = getColor(R.color.alert)
-                    textColor = black
+            fun setColor(background: Int, text: Int) {
+                textView.setTextColor(text)
+                textView.backgroundTintList = ColorStateList.valueOf(getColor(background))
+            }
+
+            if (ref == 1) {
+                when (bmi) {
+                    in -1.3f..-1f -> {
+                        setColor(R.color.alert, black)
+                    }
+                    in 1f..15.99f -> {
+                        setColor(R.color.risk4, white)
+                    }
+                    in 16f..16.99f -> {
+                        setColor(R.color.risk3, white)
+                    }
+                    in 17f..18.49f -> {
+                        setColor(R.color.risk2, white)
+                    }
+                    in 18.5f..24.99f -> {
+                        setColor(R.color.risk0, white)
+                    }
+                    in 25f..29.99f -> {
+                        setColor(R.color.risk1, black)
+                    }
+                    in 30f..34.99f -> {
+                        setColor(R.color.risk2, white)
+                    }
+                    in 35f..39.99f -> {
+                        setColor(R.color.risk3, white)
+                    }
+                    else -> {
+                        setColor(R.color.risk4, white)
+                    }
                 }
-                in 1f..15.99f -> {
-                    backgroundColor = getColor(R.color.risk4)
-                    textColor = white
-                }
-                in 16f..16.99f -> {
-                    backgroundColor = getColor(R.color.risk3)
-                    textColor = white
-                }
-                in 17f..18.49f -> {
-                    backgroundColor = getColor(R.color.risk2)
-                    textColor = white
-                }
-                in 18.5f..24.99f -> {
-                    backgroundColor = getColor(R.color.risk0)
-                    textColor = white
-                }
-                in 25f..29.99f -> {
-                    backgroundColor = getColor(R.color.risk1)
-                    textColor = black
-                }
-                in 30f..34.99f -> {
-                    backgroundColor = getColor(R.color.risk2)
-                    textColor = white
-                }
-                in 35f..39.99f -> {
-                    backgroundColor = getColor(R.color.risk3)
-                    textColor = white
-                }
-                else -> {
-                    backgroundColor = getColor(R.color.risk4)
-                    textColor = white
+            } else {
+                when (bmi) {
+                    in -1.3f..-1f -> {
+                        setColor(R.color.alert, black)
+                    }
+                    in 1f..18.49f -> {
+                        setColor(R.color.risk4, white)
+                    }
+                    in 18.5f..24.99f -> {
+                        setColor(R.color.risk0, white)
+                    }
+                    in 25f..29.99f -> {
+                        setColor(R.color.risk1, black)
+                    }
+                    else -> {
+                        setColor(R.color.risk4, white)
+                    }
                 }
             }
-            a.setTextColor(textColor)
-            a.backgroundTintList = ColorStateList.valueOf(backgroundColor)
         } else { null }
     }
 
-    private fun riskColorAPI22(a:TextView, bmi: Float) {
-        val textColor: String
-        val backgroundColor: String
+    private fun riskColorAPI22(textView: TextView, bmi: Float, ref: Int) {
         val black = "#000000"
         val white = "#ffffff"
 
-        when (bmi) {
-            in -1.3f..-1f -> {
-                backgroundColor = getString(R.string.alert)
-                textColor = black
+        fun setColor(background: Int, text: String) {
+            textView.setTextColor(Color.parseColor(text))
+            textView.backgroundTintList =
+                ColorStateList.valueOf(Color.parseColor(getString(background)))
+        }
+
+        if (ref == 1) {
+            when (bmi) {
+                in -1.3f..-1f -> {
+                    setColor(R.string.alert, black)
+                }
+                in 1f..15.99f -> {
+                    setColor(R.string.risk4, white)
+                }
+                in 16f..16.99f -> {
+                    setColor(R.string.risk3, white)
+                }
+                in 17f..18.49f -> {
+                    setColor(R.string.risk2, white)
+                }
+                in 18.5f..24.99f -> {
+                    setColor(R.string.risk0, white)
+                }
+                in 25f..29.99f -> {
+                    setColor(R.string.risk1, black)
+                }
+                in 30f..34.99f -> {
+                    setColor(R.string.risk2, white)
+                }
+                in 35f..39.99f -> {
+                    setColor(R.string.risk3, white)
+                }
+                else -> {
+                    setColor(R.string.risk4, white)
+                }
             }
-            in 1f..15.99f -> {
-                backgroundColor = getString(R.string.risk4)
-                textColor = white
-            }
-            in 16f..16.99f -> {
-                backgroundColor = getString(R.string.risk3)
-                textColor = white
-            }
-            in 17f..18.49f -> {
-                backgroundColor = getString(R.string.risk2)
-                textColor = white
-            }
-            in 18.5f..24.99f -> {
-                backgroundColor = getString(R.string.risk0)
-                textColor = white
-            }
-            in 25f..29.99f -> {
-                backgroundColor = getString(R.string.risk1)
-                textColor = black
-            }
-            in 30f..34.99f -> {
-                backgroundColor = getString(R.string.risk2)
-                textColor = white
-            }
-            in 35f..39.99f -> {
-                backgroundColor = getString(R.string.risk3)
-                textColor = white
-            }
-            else -> {
-                backgroundColor = getString(R.string.risk4)
-                textColor = white
+        } else {
+            when (bmi) {
+                in -1.3f..-1f -> {
+                    setColor(R.string.alert, black)
+                }
+                in 1f..18.49f -> {
+                    setColor(R.string.risk4, white)
+                }
+                in 18.5f..24.99f -> {
+                    setColor(R.string.risk0, white)
+                }
+                in 25f..29.99f -> {
+                    setColor(R.string.risk1, black)
+                }
+                else -> {
+                    setColor(R.string.risk4, white)
+                }
             }
         }
-        a.setTextColor(Color.parseColor(textColor))
-        a.backgroundTintList = ColorStateList.valueOf(Color.parseColor(backgroundColor))
     }
 
 }
